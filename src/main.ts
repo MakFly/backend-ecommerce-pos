@@ -23,6 +23,35 @@ import { ProductService } from './modules/products/services/ProductService.js';
 import { ProductController } from './modules/products/controllers/ProductController.js';
 import { createProductRoutes } from './modules/products/routes.js';
 
+// Modules - Orders
+import { OrderRepository } from './modules/orders/repositories/OrderRepository.js';
+import { OrderService } from './modules/orders/services/OrderService.js';
+import { OrderController } from './modules/orders/controllers/OrderController.js';
+import { createOrderRoutes } from './modules/orders/routes.js';
+
+// Modules - Customers
+import { CustomerRepository } from './modules/customers/repositories/CustomerRepository.js';
+import { CustomerService } from './modules/customers/services/CustomerService.js';
+import { createCustomerRoutes } from './modules/customers/routes.js';
+
+// Modules - Inventory
+import { InventoryService } from './modules/inventory/services/InventoryService.js';
+
+// Modules - POS
+import { POSService } from './modules/pos/services/POSService.js';
+
+// Modules - Auth
+import { AuthService } from './modules/auth/services/AuthService.js';
+
+// Modules - Shipping
+import { ShippingService } from './modules/shipping/services/ShippingService.js';
+
+// Modules - Taxes
+import { TaxService } from './modules/taxes/services/TaxService.js';
+
+// Modules - Promotions
+import { PromotionService } from './modules/promotions/services/PromotionService.js';
+
 // GraphQL
 import { createGraphQLHandler } from './graphql/index.js';
 
@@ -67,10 +96,40 @@ async function bootstrap() {
     const productController = new ProductController(productService);
     console.log('  ✅ Products module');
 
-    // TODO: Other modules (Orders, Customers, etc.)
-    // const orderRepository = new OrderRepository(database);
-    // const orderService = new OrderService(orderRepository);
-    // ...
+    // Orders Module
+    const orderRepository = new OrderRepository(database);
+    const orderService = new OrderService(orderRepository);
+    const orderController = new OrderController(orderService);
+    console.log('  ✅ Orders module');
+
+    // Customers Module
+    const customerRepository = new CustomerRepository(database);
+    const customerService = new CustomerService(customerRepository);
+    console.log('  ✅ Customers module');
+
+    // Inventory Module
+    const inventoryService = new InventoryService();
+    console.log('  ✅ Inventory module');
+
+    // POS Module
+    const posService = new POSService();
+    console.log('  ✅ POS module');
+
+    // Auth Module
+    const authService = new AuthService();
+    console.log('  ✅ Auth module');
+
+    // Shipping Module
+    const shippingService = new ShippingService();
+    console.log('  ✅ Shipping module');
+
+    // Taxes Module
+    const taxService = new TaxService();
+    console.log('  ✅ Taxes module');
+
+    // Promotions Module
+    const promotionService = new PromotionService();
+    console.log('  ✅ Promotions module');
 
     // ===================================
     // Middleware
@@ -107,6 +166,22 @@ async function bootstrap() {
     api.route('/products', productRoutes);
     console.log('  ✅ /api/v1/products');
 
+    const orderRoutes = createOrderRoutes(database);
+    api.route('/orders', orderRoutes);
+    console.log('  ✅ /api/v1/orders');
+
+    const customerRoutes = createCustomerRoutes(database);
+    api.route('/customers', customerRoutes);
+    console.log('  ✅ /api/v1/customers');
+
+    // TODO: Add routes for other modules when ready
+    // api.route('/inventory', inventoryRoutes);
+    // api.route('/pos', posRoutes);
+    // api.route('/auth', authRoutes);
+    // api.route('/shipping', shippingRoutes);
+    // api.route('/taxes', taxRoutes);
+    // api.route('/promotions', promotionRoutes);
+
     // Mount REST API
     app.route('/api/v1', api);
 
@@ -120,6 +195,14 @@ async function bootstrap() {
       eventBus,
       // Services (for GraphQL resolvers)
       productService,
+      orderService,
+      customerService,
+      inventoryService,
+      posService,
+      authService,
+      shippingService,
+      taxService,
+      promotionService,
     });
 
     // Mount GraphQL endpoint

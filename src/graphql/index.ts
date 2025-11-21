@@ -5,6 +5,14 @@ import { IDatabase } from '@shared/interfaces/IDatabase.js';
 import { ICache } from '@shared/interfaces/ICache.js';
 import { IEventBus } from '@shared/interfaces/IEventBus.js';
 import { ProductService } from '@modules/products/services/ProductService.js';
+import { OrderService } from '@modules/orders/services/OrderService.js';
+import { CustomerService } from '@modules/customers/services/CustomerService.js';
+import { InventoryService } from '@modules/inventory/services/InventoryService.js';
+import { POSService } from '@modules/pos/services/POSService.js';
+import { AuthService } from '@modules/auth/services/AuthService.js';
+import { ShippingService } from '@modules/shipping/services/ShippingService.js';
+import { TaxService } from '@modules/taxes/services/TaxService.js';
+import { PromotionService } from '@modules/promotions/services/PromotionService.js';
 
 /**
  * GraphQL Context Type
@@ -19,10 +27,14 @@ export interface GraphQLContext {
 
   // Services (injected)
   productService: ProductService;
-
-  // TODO: Add more services
-  // orderService: OrderService;
-  // customerService: CustomerService;
+  orderService: OrderService;
+  customerService: CustomerService;
+  inventoryService: InventoryService;
+  posService: POSService;
+  authService: AuthService;
+  shippingService: ShippingService;
+  taxService: TaxService;
+  promotionService: PromotionService;
 }
 
 /**

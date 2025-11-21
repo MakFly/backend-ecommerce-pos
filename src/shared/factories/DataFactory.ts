@@ -1,4 +1,12 @@
 import { ProductFactory } from './ProductFactory.js';
+import { OrderFactory } from './OrderFactory.js';
+import { CustomerFactory } from './CustomerFactory.js';
+import { InventoryFactory } from './InventoryFactory.js';
+import { POSFactory } from './POSFactory.js';
+import { AuthFactory } from './AuthFactory.js';
+import { ShippingFactory } from './ShippingFactory.js';
+import { TaxFactory } from './TaxFactory.js';
+import { PromotionFactory } from './PromotionFactory.js';
 
 /**
  * Master Data Factory
@@ -8,21 +16,25 @@ import { ProductFactory } from './ProductFactory.js';
  * Usage:
  * ```typescript
  * // In tests
- * const product = DataFactory.product.create();
- * const products = DataFactory.product.createMany(10);
+ * const product = DataFactory.product.createProduct();
+ * const order = DataFactory.order.createOrder();
+ * const customer = DataFactory.customer.createCustomer();
  *
  * // In seeds
- * await DataFactory.seedProducts(database, 50);
+ * await DataFactory.seedDatabase(database);
  * ```
  */
 export class DataFactory {
-  // Product factory
+  // All factories
   static product = ProductFactory;
-
-  // TODO: Add more factories
-  // static order = OrderFactory;
-  // static customer = CustomerFactory;
-  // static inventory = InventoryFactory;
+  static order = OrderFactory;
+  static customer = CustomerFactory;
+  static inventory = InventoryFactory;
+  static pos = POSFactory;
+  static auth = AuthFactory;
+  static shipping = ShippingFactory;
+  static tax = TaxFactory;
+  static promotion = PromotionFactory;
 
   /**
    * Seed products into database
@@ -92,5 +104,20 @@ export class DataFactory {
     }
 
     console.log(`✅ Seeded ${count} products with variants`);
+  }
+
+  /**
+   * Seed entire database with sample data
+   */
+  static async seedDatabase(database: any): Promise<void> {
+    console.log('\n🌱 Seeding complete database...\n');
+
+    // Seed products (already implemented)
+    await this.seedProducts(database, 50);
+
+    console.log('\n✅ Database seeding complete!\n');
+    console.log('📊 Summary:');
+    console.log('  - Products: 50 with variants');
+    console.log('  - Additional modules: Coming soon');
   }
 }
