@@ -1,35 +1,36 @@
 # 🛒 E-commerce Backend + POS
 
-**Headless, API-first e-commerce platform** with integrated Point of Sale (POS) capabilities.
+**Modern e-commerce API** with REST + GraphQL, built with **TDD** and **SOLID** principles.
 
-Built with **TypeScript**, **Hono**, **PostgreSQL**, **Redis**, and **NATS**.
+TypeScript • Hono • PostgreSQL • Redis • NATS • GraphQL
 
 ---
 
-## 🎯 Features
+## ✨ Features
 
-- **Product Management**: Products, variants, SKUs, collections, attributes
-- **Inventory Tracking**: Multi-warehouse stock management with reservations
-- **Order Processing**: Cart, checkout, payments, fulfillment
-- **Customer Management**: Profiles, addresses, authentication
-- **POS Integration**: Terminal sessions, sales, barcode scanning, offline sync
-- **Promotions**: Coupons, discounts, automatic promotions
-- **Webhooks & Apps**: Extensibility via webhooks and third-party apps
-- **Auth & RBAC**: JWT-based authentication with role-based access control
+- 🎨 **Dual API**: REST + GraphQL
+- 📦 **Product Management**: Products, variants, SKUs
+- 📊 **Inventory Tracking**: Multi-warehouse stock
+- 🛒 **Order Processing**: Cart, checkout, payments
+- 👥 **Customer Management**: Profiles & auth
+- 🏪 **POS Integration**: Point of Sale ready
+- 🎁 **Promotions**: Coupons & discounts
+- 🔌 **Webhooks**: Extensible via events
+- 🔐 **Auth & RBAC**: JWT + role-based access
 
 ---
 
 ## 🏗️ Architecture
 
-**Modular Monolith** with **Domain-Driven Design (DDD)**
+**TDD (Test-Driven Development) + SOLID Principles**
 
-- Clean Architecture
-- Event-Driven (NATS)
-- Repository Pattern
-- Dependency Injection
-- CQRS-ready
+- ✅ Tests written **first** (Red → Green → Refactor)
+- ✅ Classic **Dependency Injection** (no magic)
+- ✅ Single Responsibility per class
+- ✅ Interface-based design
+- ✅ REST + GraphQL APIs
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for full details.
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for details.
 
 ---
 
@@ -40,19 +41,17 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for full details.
 - Node.js 20+
 - Docker & Docker Compose
 
-### 1. Clone & Install
+### 1. Install
 
 ```bash
-git clone <repo-url>
-cd backend-ecommerce-pos
 npm install
 ```
 
-### 2. Environment Setup
+### 2. Setup Environment
 
 ```bash
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env with your config
 ```
 
 ### 3. Start Infrastructure
@@ -61,19 +60,27 @@ cp .env.example .env
 docker-compose up -d
 ```
 
-This starts:
+Starts:
 - PostgreSQL (port 5432)
 - Redis (port 6379)
 - NATS (port 4222)
 - MinIO (port 9000)
 
-### 4. Run Database Migrations
+### 4. Run Migrations
 
 ```bash
 npm run migrate
 ```
 
-### 5. Start Development Server
+### 5. Seed Database (Optional)
+
+```bash
+npm run seed
+```
+
+Creates 50 fake products with variants using **DataFactory**.
+
+### 6. Start Dev Server
 
 ```bash
 npm run dev
@@ -83,155 +90,293 @@ Server runs at: `http://localhost:3000`
 
 ---
 
-## 📚 API Documentation
+## 🌐 APIs
 
-### Base URL
+### REST API
 
 ```
 http://localhost:3000/api/v1
 ```
 
-### Authentication
+**Endpoints:**
+- `GET /products` - List products
+- `GET /products/:id` - Get product
+- `POST /products` - Create product
+- `PATCH /products/:id` - Update product
+- `DELETE /products/:id` - Delete product
 
-Most endpoints require a JWT token in the `Authorization` header:
+### GraphQL API
 
 ```
-Authorization: Bearer <your-jwt-token>
+http://localhost:3000/graphql
 ```
 
-### Key Endpoints
+**Interactive Playground** with autocomplete & docs!
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/auth/register` | POST | Register new user |
-| `/auth/login` | POST | Login and get JWT tokens |
-| `/auth/refresh` | POST | Refresh access token |
-| `/products` | GET | List products |
-| `/products` | POST | Create product |
-| `/products/:id` | GET | Get product details |
-| `/products/:id/variants` | POST | Add variant |
-| `/orders` | GET | List orders |
-| `/orders` | POST | Create order |
-| `/customers` | GET | List customers |
-| `/inventory/stock/:variantId` | GET | Check stock level |
-| `/pos/sessions` | POST | Open POS session |
-| `/pos/sales` | POST | Create POS sale |
-| `/pos/products/lookup` | GET | Barcode/SKU lookup |
+**Example Query:**
+```graphql
+query GetProducts {
+  products(limit: 10) {
+    id
+    title
+    handle
+    status
+  }
+}
+```
 
-See [docs/API_REFERENCE.md](./docs/API_REFERENCE.md) for complete API documentation.
+**Example Mutation:**
+```graphql
+mutation CreateProduct {
+  createProduct(input: {
+    handle: "cool-tshirt"
+    title: "Cool T-Shirt"
+    status: ACTIVE
+  }) {
+    id
+    title
+  }
+}
+```
+
+See [GRAPHQL_EXAMPLES.md](./docs/GRAPHQL_EXAMPLES.md) for complete examples.
 
 ---
 
-## 🧪 Testing
+## 📂 Project Structure
+
+```
+src/
+├── modules/                    # Business modules
+│   └── products/              # ✅ Complete example
+│       ├── __tests__/         # TDD tests
+│       ├── models/            # Data models
+│       ├── repositories/      # Data access
+│       ├── services/          # Business logic
+│       ├── controllers/       # HTTP handlers
+│       ├── validators/        # Input validation
+│       └── routes.ts          # REST routes
+│
+├── graphql/                   # GraphQL Layer
+│   ├── schema/                # GraphQL schemas
+│   ├── resolvers/             # GraphQL resolvers
+│   └── index.ts               # GraphQL setup
+│
+├── infrastructure/            # Infrastructure
+│   ├── database/              # PostgreSQL
+│   ├── cache/                 # Redis
+│   └── events/                # NATS
+│
+├── shared/
+│   ├── interfaces/            # Common interfaces
+│   ├── middleware/            # Auth, validation, errors
+│   └── factories/             # 🏭 Data factories
+│       ├── ProductFactory.ts  # Generate fake products
+│       ├── DataFactory.ts     # Master factory
+│       └── seed.ts            # Database seeder
+│
+└── main.ts                    # Entry point (Classic DI)
+```
+
+---
+
+## 🏭 Data Factory
+
+Generate fake data for tests & seeding:
+
+```typescript
+import { DataFactory } from '@shared/factories/DataFactory.js';
+
+// Create one product
+const product = DataFactory.product.createProduct();
+
+// Create many products
+const products = DataFactory.product.createProducts(10);
+
+// Create product with variants
+const { product, variants } = DataFactory.product.createProductWithVariants(3);
+
+// Seed database
+await DataFactory.seedProducts(database, 50);
+```
+
+Powered by **Faker.js** for realistic data.
+
+---
+
+## 🧪 Testing (TDD)
 
 ```bash
 # Run all tests
 npm test
 
-# Run unit tests
-npm run test:unit
+# Watch mode (TDD workflow)
+npm test -- --watch
 
-# Run integration tests
-npm run test:integration
+# Specific test
+npm test -- ProductService.test.ts
 
-# Run with coverage
+# Coverage
 npm test -- --coverage
 ```
 
----
+**TDD Workflow:**
+1. Write test (RED)
+2. Make it pass (GREEN)
+3. Refactor (REFACTOR)
 
-## 🛠️ Development
-
-### Project Structure
-
-```
-src/
-├── modules/           # Business modules (Products, Orders, etc.)
-│   ├── products/
-│   ├── orders/
-│   ├── customers/
-│   ├── inventory/
-│   ├── pos/
-│   ├── promotions/
-│   ├── webhooks/
-│   └── auth/
-├── core/              # Core domain patterns
-│   ├── domain/        # Base entities, value objects
-│   └── infrastructure/# Database, event bus, Redis
-├── shared/            # Shared utilities
-│   ├── middleware/
-│   ├── validation/
-│   └── errors/
-└── main.ts            # Application entry point
-```
-
-### Module Structure
-
-Each module follows DDD structure:
-
-```
-module/
-├── domain/        # Entities, aggregates, value objects
-├── repository/    # Data access
-├── service/       # Business logic
-├── routes/        # HTTP endpoints
-├── dto/           # Data transfer objects (validation)
-└── events/        # Domain events
-```
+See [TDD_GUIDE.md](./docs/TDD_GUIDE.md) for complete guide.
 
 ---
 
-## 🔐 Security
+## 🔌 Dependency Injection
 
-- JWT-based authentication
-- Password hashing with bcrypt (12 rounds)
-- Input validation with Zod
-- SQL injection protection (parameterized queries)
-- CORS configuration
-- Rate limiting (Redis-based)
+**Classic DI** (no Container magic):
+
+```typescript
+// main.ts
+
+// Infrastructure
+const database = new PostgresDatabase(connectionString);
+const cache = new RedisCache(config);
+
+// Products Module (manual wiring)
+const productRepository = new ProductRepository(database);
+const productService = new ProductService(productRepository);
+const productController = new ProductController(productService);
+
+// Inject into routes
+const productRoutes = createProductRoutes(database);
+
+// Inject into GraphQL
+const graphql = createGraphQLHandler({
+  database,
+  cache,
+  productService, // ← Services available in resolvers
+});
+```
+
+**Simple, explicit, and testable!**
 
 ---
 
-## 📦 Deployment
+## 📚 Documentation
 
-### Docker Production Build
-
-```bash
-docker build -f docker/Dockerfile -t ecommerce-backend .
-docker run -p 3000:3000 --env-file .env ecommerce-backend
-```
-
-### Docker Compose
-
-```bash
-docker-compose up -d
-```
+| Document | Description |
+|----------|-------------|
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | TDD + SOLID architecture |
+| [TDD_GUIDE.md](./docs/TDD_GUIDE.md) | Complete TDD workflow |
+| [GRAPHQL_EXAMPLES.md](./docs/GRAPHQL_EXAMPLES.md) | GraphQL queries & mutations |
+| [DATABASE_SCHEMA.md](./docs/DATABASE_SCHEMA.md) | Database schema & ERD |
+| [API_REFERENCE.md](./docs/API_REFERENCE.md) | REST API reference |
 
 ---
 
-## 🧩 Tech Stack
+## 🧰 Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
 | **Runtime** | Node.js 20+ |
-| **Framework** | Hono (modern, fast web framework) |
-| **Language** | TypeScript (strict mode) |
-| **Database** | PostgreSQL 16 |
-| **Cache** | Redis 7 |
-| **Event Bus** | NATS Streaming |
-| **Storage** | S3-compatible (MinIO) |
+| **Framework** | Hono |
+| **Language** | TypeScript (strict) |
+| **APIs** | REST + GraphQL |
+| **GraphQL** | graphql-yoga |
+| **Database** | PostgreSQL |
+| **Cache** | Redis |
+| **Events** | NATS |
 | **Validation** | Zod |
 | **Testing** | Vitest |
-| **CI/CD** | GitHub Actions |
+| **Fake Data** | Faker.js |
 
 ---
 
-## 📖 Additional Documentation
+## 📦 Scripts
 
-- [Architecture Overview](./ARCHITECTURE.md)
-- [Database Schema](./docs/DATABASE_SCHEMA.md)
-- [API Reference](./docs/API_REFERENCE.md)
-- [Development Guide](./docs/DEVELOPMENT.md)
+```bash
+npm run dev          # Start dev server (watch mode)
+npm run build        # Build for production
+npm run start        # Start production server
+
+npm test             # Run tests
+npm test -- --watch  # TDD watch mode
+
+npm run seed         # Seed database with fake data
+npm run migrate      # Run database migrations
+
+npm run lint         # Lint code
+npm run format       # Format code
+
+npm run docker:up    # Start Docker services
+npm run docker:down  # Stop Docker services
+```
+
+---
+
+## 🎯 Examples
+
+### REST API (cURL)
+
+```bash
+# List products
+curl http://localhost:3000/api/v1/products
+
+# Create product
+curl -X POST http://localhost:3000/api/v1/products \
+  -H "Content-Type: application/json" \
+  -d '{
+    "handle": "cool-hoodie",
+    "title": "Cool Hoodie",
+    "status": "active"
+  }'
+```
+
+### GraphQL API (cURL)
+
+```bash
+curl -X POST http://localhost:3000/graphql \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query { products { id title } }"
+  }'
+```
+
+### Using Data Factory (Test)
+
+```typescript
+// __tests__/ProductService.test.ts
+import { DataFactory } from '@shared/factories/DataFactory.js';
+
+it('should create a product', async () => {
+  const dto = DataFactory.product.createProductDto();
+  const product = await service.createProduct(dto);
+
+  expect(product.id).toBeDefined();
+});
+```
+
+---
+
+## 🚦 Roadmap
+
+- ✅ Products Module (TDD + REST + GraphQL)
+- ✅ Data Factory (Faker.js)
+- ✅ Classic Dependency Injection
+- 🔜 Orders Module (TDD)
+- 🔜 Customers Module (TDD)
+- 🔜 Auth Module (JWT + RBAC)
+- 🔜 Inventory Module
+- 🔜 POS Module
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repo
+2. Create feature branch
+3. **Write tests first (TDD)**
+4. Implement feature
+5. Ensure tests pass
+6. Submit PR
 
 ---
 
@@ -241,12 +386,6 @@ MIT
 
 ---
 
-## 🤝 Contributing
+**Built with ❤️ using TDD + SOLID + GraphQL**
 
-Contributions welcome! Please read our contributing guidelines first.
-
----
-
-## 📬 Support
-
-For issues and questions, please open a GitHub issue.
+🌐 REST API • ⚡ GraphQL • 🏭 Data Factory • 🧪 TDD
