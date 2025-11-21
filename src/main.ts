@@ -36,21 +36,27 @@ import { createCustomerRoutes } from './modules/customers/routes.js';
 
 // Modules - Inventory
 import { InventoryService } from './modules/inventory/services/InventoryService.js';
+import { createInventoryRoutes } from './modules/inventory/routes.js';
 
 // Modules - POS
 import { POSService } from './modules/pos/services/POSService.js';
+import { createPOSRoutes } from './modules/pos/routes.js';
 
 // Modules - Auth
 import { AuthService } from './modules/auth/services/AuthService.js';
+import { createAuthRoutes } from './modules/auth/routes.js';
 
 // Modules - Shipping
 import { ShippingService } from './modules/shipping/services/ShippingService.js';
+import { createShippingRoutes } from './modules/shipping/routes.js';
 
 // Modules - Taxes
 import { TaxService } from './modules/taxes/services/TaxService.js';
+import { createTaxRoutes } from './modules/taxes/routes.js';
 
 // Modules - Promotions
 import { PromotionService } from './modules/promotions/services/PromotionService.js';
+import { createPromotionRoutes } from './modules/promotions/routes.js';
 
 // GraphQL
 import { createGraphQLHandler } from './graphql/index.js';
@@ -96,40 +102,68 @@ async function bootstrap() {
     const productController = new ProductController(productService);
     console.log('  ✅ Products module');
 
-    // Orders Module
-    const orderRepository = new OrderRepository(database);
-    const orderService = new OrderService(orderRepository);
-    const orderController = new OrderController(orderService);
-    console.log('  ✅ Orders module');
-
     // Customers Module
     const customerRepository = new CustomerRepository(database);
     const customerService = new CustomerService(customerRepository);
     console.log('  ✅ Customers module');
 
-    // Inventory Module
-    const inventoryService = new InventoryService();
+    // Inventory Module (needed by OrderService)
+    const { WarehouseRepository, StockLevelRepository, StockMovementRepository } = await import('./modules/inventory/repositories/WarehouseRepository.js');
+    const warehouseRepo = new WarehouseRepository(database);
+    const { StockLevelRepository: SLRepo } = await import('./modules/inventory/repositories/StockLevelRepository.js');
+    const stockLevelRepo = new SLRepo(database);
+    const { StockMovementRepository: SMRepo } = await import('./modules/inventory/repositories/StockMovementRepository.js');
+    const stockMovementRepo = new SMRepo(database);
+    const inventoryService = new InventoryService(warehouseRepo, stockLevelRepo, stockMovementRepo);
     console.log('  ✅ Inventory module');
 
+    // Shipping Module (needed by OrderService)
+    const { ShippingZoneRepository, ShippingRateRepository } = await import('./modules/shipping/repositories/ShippingRepository.js');
+    const shippingZoneRepo = new ShippingZoneRepository(database);
+    const shippingRateRepo = new ShippingRateRepository(database);
+    const shippingService = new ShippingService(shippingZoneRepo, shippingRateRepo);
+    console.log('  ✅ Shipping module');
+
+    // Taxes Module (needed by OrderService)
+    const { TaxRateRepository } = await import('./modules/taxes/repositories/TaxRateRepository.js');
+    const taxRateRepo = new TaxRateRepository(database);
+    const taxService = new TaxService(taxRateRepo);
+    console.log('  ✅ Taxes module');
+
+    // Promotions Module (needed by OrderService)
+    const { CouponRepository, DiscountRepository } = await import('./modules/promotions/repositories/PromotionRepository.js');
+    const couponRepo = new CouponRepository(database);
+    const discountRepo = new DiscountRepository(database);
+    const promotionService = new PromotionService(couponRepo, discountRepo);
+    console.log('  ✅ Promotions module');
+
+    // Orders Module (WITH FULL INTEGRATION)
+    const orderRepository = new OrderRepository(database);
+    const orderService = new OrderService(
+      orderRepository,
+      inventoryService,   // Stock reservation
+      taxService,         // Tax calculation
+      shippingService,    // Shipping calculation
+      promotionService    // Coupon validation
+    );
+    const orderController = new OrderController(orderService);
+    console.log('  ✅ Orders module (with Inventory + Tax + Shipping + Promotions integration)');
+
     // POS Module
-    const posService = new POSService();
+    const { POSSessionRepository, POSSaleRepository } = await import('./modules/pos/repositories/POSSessionRepository.js');
+    const posSessionRepo = new POSSessionRepository(database);
+    const { POSSaleRepository: PSRepo } = await import('./modules/pos/repositories/POSSaleRepository.js');
+    const posSaleRepo = new PSRepo(database);
+    const posService = new POSService(posSessionRepo, posSaleRepo);
     console.log('  ✅ POS module');
 
     // Auth Module
-    const authService = new AuthService();
+    const { UserRepository, RoleRepository } = await import('./modules/auth/repositories/UserRepository.js');
+    const userRepo = new UserRepository(database);
+    const { RoleRepository: RRepo } = await import('./modules/auth/repositories/RoleRepository.js');
+    const roleRepo = new RRepo(database);
+    const authService = new AuthService(userRepo, roleRepo);
     console.log('  ✅ Auth module');
-
-    // Shipping Module
-    const shippingService = new ShippingService();
-    console.log('  ✅ Shipping module');
-
-    // Taxes Module
-    const taxService = new TaxService();
-    console.log('  ✅ Taxes module');
-
-    // Promotions Module
-    const promotionService = new PromotionService();
-    console.log('  ✅ Promotions module');
 
     // ===================================
     // Middleware
@@ -174,13 +208,29 @@ async function bootstrap() {
     api.route('/customers', customerRoutes);
     console.log('  ✅ /api/v1/customers');
 
-    // TODO: Add routes for other modules when ready
-    // api.route('/inventory', inventoryRoutes);
-    // api.route('/pos', posRoutes);
-    // api.route('/auth', authRoutes);
-    // api.route('/shipping', shippingRoutes);
-    // api.route('/taxes', taxRoutes);
-    // api.route('/promotions', promotionRoutes);
+    const inventoryRoutes = createInventoryRoutes(database);
+    api.route('/inventory', inventoryRoutes);
+    console.log('  ✅ /api/v1/inventory');
+
+    const posRoutes = createPOSRoutes(database);
+    api.route('/pos', posRoutes);
+    console.log('  ✅ /api/v1/pos');
+
+    const authRoutes = createAuthRoutes(database);
+    api.route('/auth', authRoutes);
+    console.log('  ✅ /api/v1/auth');
+
+    const shippingRoutes = createShippingRoutes(database);
+    api.route('/shipping', shippingRoutes);
+    console.log('  ✅ /api/v1/shipping');
+
+    const taxRoutes = createTaxRoutes(database);
+    api.route('/taxes', taxRoutes);
+    console.log('  ✅ /api/v1/taxes');
+
+    const promotionRoutes = createPromotionRoutes(database);
+    api.route('/promotions', promotionRoutes);
+    console.log('  ✅ /api/v1/promotions');
 
     // Mount REST API
     app.route('/api/v1', api);

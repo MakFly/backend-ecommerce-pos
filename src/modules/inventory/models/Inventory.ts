@@ -2,10 +2,16 @@ export interface Warehouse {
   id: string;
   code: string;
   name: string;
-  address?: string;
-  city?: string;
-  country?: string;
+  address: {
+    address1: string;
+    address2?: string;
+    city: string;
+    region: string;
+    postalCode: string;
+    country: string;
+  };
   isActive: boolean;
+  metadata?: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,30 +23,28 @@ export interface StockLevel {
   available: number;
   reserved: number;
   incoming: number;
-  updatedAt: Date;
+  onHand: number;
 }
 
 export interface StockMovement {
   id: string;
   variantId: string;
   warehouseId: string;
-  type: StockMovementType;
+  type: MovementType;
   quantity: number;
-  referenceType?: string;
-  referenceId?: string;
-  note?: string;
+  reason?: string;
+  reference?: string;
+  metadata?: Record<string, any>;
   createdAt: Date;
 }
 
-export type StockMovementType =
-  | 'received'
-  | 'sold'
-  | 'reserved'
-  | 'released'
+export type MovementType =
+  | 'purchase'
+  | 'sale'
   | 'adjustment'
-  | 'damaged'
-  | 'returned'
-  | 'transfer';
+  | 'transfer'
+  | 'return'
+  | 'damaged';
 
 export interface CreateWarehouseDto {
   code: string;
@@ -54,13 +58,12 @@ export interface AdjustStockDto {
   variantId: string;
   warehouseId: string;
   quantity: number;
-  note?: string;
+  reason?: string;
 }
 
 export interface ReserveStockDto {
   variantId: string;
   warehouseId: string;
   quantity: number;
-  referenceType: string;
-  referenceId: string;
+  reference?: string;
 }

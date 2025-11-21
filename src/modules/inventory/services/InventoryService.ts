@@ -14,9 +14,9 @@ import {
 
 export class InventoryService {
   constructor(
+    private readonly warehouseRepo: IWarehouseRepository,
     private readonly stockLevelRepo: IStockLevelRepository,
-    private readonly stockMovementRepo: IStockMovementRepository,
-    private readonly warehouseRepo: IWarehouseRepository
+    private readonly stockMovementRepo: IStockMovementRepository
   ) {}
 
   async getStockLevel(variantId: string, warehouseId: string): Promise<StockLevel> {
@@ -136,7 +136,25 @@ export class InventoryService {
     return this.stockLevelRepo.findByVariant(variantId);
   }
 
-  async getStockMovements(variantId: string): Promise<StockMovement[]> {
-    return this.stockMovementRepo.findByVariant(variantId);
+  async getStockMovements(variantId: string, limit?: number): Promise<StockMovement[]> {
+    return this.stockMovementRepo.findByVariant(variantId, limit);
+  }
+
+  // Warehouse methods
+  async listWarehouses(filters?: { isActive?: boolean }): Promise<Warehouse[]> {
+    return this.warehouseRepo.findAll(filters);
+  }
+
+  async getWarehouse(id: string): Promise<Warehouse | null> {
+    return this.warehouseRepo.findById(id);
+  }
+
+  // Stock level methods
+  async listStockLevels(filters?: { variantId?: string }): Promise<StockLevel[]> {
+    if (filters?.variantId) {
+      return this.stockLevelRepo.findByVariant(filters.variantId);
+    }
+    // For now, return empty array if no filter (could implement findAll in repo)
+    return [];
   }
 }
