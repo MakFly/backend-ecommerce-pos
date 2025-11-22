@@ -10,8 +10,6 @@ build/
 *.js.map
 
 # Environment variables
-.env
-.env.local
 .env.*.local
 
 # Logs
@@ -44,3 +42,4 @@ temp/
 # Database
 *.db
 *.sqlite
+config.bat

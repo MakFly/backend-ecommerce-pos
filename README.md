@@ -1,36 +1,55 @@
 # 🛒 E-commerce Backend + POS
 
-**Modern e-commerce API** with REST + GraphQL, built with **TDD** and **SOLID** principles.
+**Production-ready e-commerce API** with REST + GraphQL, built with **TDD** and **SOLID** principles.
 
-TypeScript • Hono • PostgreSQL • Redis • NATS • GraphQL
+> Complete backend solution with 8 modules, JWT authentication, Zod validation, and full inter-module integration.
+
+TypeScript • Hono • PostgreSQL • Redis • NATS • GraphQL • JWT • Zod
 
 ---
 
 ## ✨ Features
 
-- 🎨 **Dual API**: REST + GraphQL
-- 📦 **Product Management**: Products, variants, SKUs
-- 📊 **Inventory Tracking**: Multi-warehouse stock
-- 🛒 **Order Processing**: Cart, checkout, payments
-- 👥 **Customer Management**: Profiles & auth
-- 🏪 **POS Integration**: Point of Sale ready
-- 🎁 **Promotions**: Coupons & discounts
-- 🔌 **Webhooks**: Extensible via events
-- 🔐 **Auth & RBAC**: JWT + role-based access
+### 🎯 Complete E-commerce Modules
+- ✅ **Products & Categories**: Full catalog management with variants, SKUs, and options
+- ✅ **Inventory Management**: Multi-warehouse stock tracking with reservations
+- ✅ **Order Processing**: Complete order flow with payment and fulfillment
+- ✅ **Customer Management**: Profiles, addresses, and history
+- ✅ **POS System**: Point-of-Sale with sessions, sales, and cash management
+- ✅ **Promotions**: Coupons, discounts, and validation logic
+- ✅ **Shipping**: Zone-based rates with calculation engine
+- ✅ **Tax Calculation**: Country/region taxes with compound tax support
+
+### 🔐 Security & Validation
+- ✅ **JWT Authentication**: Access + refresh tokens with role-based authorization
+- ✅ **Zod Validation**: Type-safe request validation with detailed error messages
+- ✅ **Bcrypt Password Hashing**: Secure password storage
+- ✅ **Middleware**: Auth, validation, error handling
+
+### 🎨 Dual API Architecture
+- ✅ **REST API**: Complete CRUD endpoints for all modules
+- ✅ **GraphQL API**: Flexible queries with graphql-yoga
+- ✅ **Inter-Module Integration**: Orders → Inventory, Taxes, Shipping, Promotions
+
+### 🏗️ Production-Ready
+- ✅ **Docker Compose**: PostgreSQL, Redis, NATS ready to go
+- ✅ **Health Checks**: Monitor service status
+- ✅ **Error Handling**: Global error handler with standardized responses
+- ✅ **Environment Config**: Comprehensive .env.example
+- ✅ **Database Migrations**: Complete schema with 20+ tables
 
 ---
 
 ## 🏗️ Architecture
 
-**TDD (Test-Driven Development) + SOLID Principles**
+**TDD (Test-Driven Development) + SOLID Principles + Classic DI**
 
-- ✅ Tests written **first** (Red → Green → Refactor)
-- ✅ Classic **Dependency Injection** (no magic)
-- ✅ Single Responsibility per class
-- ✅ Interface-based design
-- ✅ REST + GraphQL APIs
-
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for details.
+- ✅ **Classic Dependency Injection** (manual constructor injection, no Container)
+- ✅ **Repository Pattern** with interface segregation
+- ✅ **Service Layer** with full inter-module integration
+- ✅ **Single Responsibility** per class
+- ✅ **Interface-based design** (IDatabase, IRepository, etc.)
+- ✅ **REST + GraphQL** dual APIs
 
 ---
 
@@ -69,8 +88,10 @@ Starts:
 ### 4. Run Migrations
 
 ```bash
-npm run migrate
+psql $DATABASE_URL -f database/migrations/001_initial_schema.sql
 ```
+
+This creates 20+ tables for all modules: products, orders, customers, inventory, POS, promotions, shipping, taxes, and more.
 
 ### 5. Seed Database (Optional)
 
@@ -78,7 +99,7 @@ npm run migrate
 npm run seed
 ```
 
-Creates 50 fake products with variants using **DataFactory**.
+Creates fake data using **DataFactory** (Faker.js).
 
 ### 6. Start Dev Server
 
@@ -88,22 +109,71 @@ npm run dev
 
 Server runs at: `http://localhost:3000`
 
+**API Endpoints:**
+- REST API: `http://localhost:3000/api/v1`
+- GraphQL: `http://localhost:3000/graphql`
+- Health Check: `http://localhost:3000/health`
+
 ---
 
 ## 🌐 APIs
 
 ### REST API
 
-```
-http://localhost:3000/api/v1
-```
+Base URL: `http://localhost:3000/api/v1`
 
-**Endpoints:**
-- `GET /products` - List products
-- `GET /products/:id` - Get product
-- `POST /products` - Create product
+#### 🔐 Authentication (`/auth`)
+- `POST /register` - Register new user (Zod validated)
+- `POST /login` - Login with email/password (Zod validated)
+- `POST /refresh` - Refresh access token (Zod validated)
+- `GET /me` - Get current user (requires JWT)
+- `GET /users` - List users
+- `GET /roles` - List roles
+
+#### 📦 Products (`/products`)
+- `GET /products` - List products with pagination
+- `GET /products/:id` - Get product details
+- `POST /products` - Create product (Zod validated)
 - `PATCH /products/:id` - Update product
 - `DELETE /products/:id` - Delete product
+
+#### 🛒 Orders (`/orders`)
+- `GET /orders` - List orders
+- `GET /orders/:id` - Get order details
+- `POST /orders` - Create order (Zod validated, full integration)
+- `PATCH /orders/:id` - Update order
+- `POST /orders/:id/cancel` - Cancel order (releases stock)
+
+#### 📊 Inventory (`/inventory`)
+- `GET /warehouses` - List warehouses
+- `GET /warehouses/:id` - Get warehouse
+- `GET /stock-levels` - List stock levels
+- `POST /stock-levels/reserve` - Reserve stock (Zod validated)
+- `POST /stock-levels/release` - Release stock (Zod validated)
+- `POST /stock-levels/adjust` - Adjust stock (Zod validated)
+- `GET /stock-movements` - Get stock history
+
+#### 🏪 POS (`/pos`)
+- `GET /sessions` - List POS sessions
+- `POST /sessions` - Open session (Zod validated)
+- `PUT /sessions/:id/close` - Close session (Zod validated)
+- `GET /sales` - List sales
+- `POST /sales` - Create sale (Zod validated)
+
+#### 🎁 Promotions (`/promotions`)
+- `POST /validate-coupon` - Validate coupon (Zod validated)
+- `POST /apply-discounts` - Apply discounts
+- `GET /coupons` - List coupons
+- `GET /discounts` - List active discounts
+
+#### 🚚 Shipping (`/shipping`)
+- `POST /calculate` - Calculate shipping quotes (Zod validated)
+- `GET /zones` - List shipping zones
+- `GET /rates` - List shipping rates
+
+#### 💰 Taxes (`/taxes`)
+- `POST /calculate` - Calculate taxes (Zod validated)
+- `GET /rates` - List tax rates
 
 ### GraphQL API
 
@@ -147,35 +217,81 @@ See [GRAPHQL_EXAMPLES.md](./docs/GRAPHQL_EXAMPLES.md) for complete examples.
 
 ```
 src/
-├── modules/                    # Business modules
-│   └── products/              # ✅ Complete example
-│       ├── __tests__/         # TDD tests
-│       ├── models/            # Data models
-│       ├── repositories/      # Data access
-│       ├── services/          # Business logic
-│       ├── controllers/       # HTTP handlers
-│       ├── validators/        # Input validation
-│       └── routes.ts          # REST routes
+├── modules/                      # 8 Complete Business Modules
+│   ├── products/                 # ✅ Products & Variants
+│   │   ├── models/              # Product, Variant DTOs
+│   │   ├── repositories/        # ProductRepository, VariantRepository
+│   │   ├── services/            # ProductService
+│   │   ├── controllers/         # ProductController
+│   │   └── routes.ts            # REST routes
+│   │
+│   ├── orders/                   # ✅ Order Management
+│   │   ├── models/              # Order, OrderItem DTOs
+│   │   ├── repositories/        # OrderRepository
+│   │   ├── services/            # OrderService (with full integration)
+│   │   └── routes.ts
+│   │
+│   ├── customers/                # ✅ Customer Profiles
+│   ├── inventory/                # ✅ Multi-Warehouse Stock
+│   │   ├── repositories/        # Warehouse, StockLevel, StockMovement
+│   │   ├── services/            # InventoryService
+│   │   └── routes.ts
+│   │
+│   ├── pos/                      # ✅ Point of Sale
+│   │   ├── repositories/        # POSSessionRepository, POSSaleRepository
+│   │   ├── services/            # POSService
+│   │   └── routes.ts
+│   │
+│   ├── auth/                     # ✅ JWT Authentication
+│   │   ├── repositories/        # UserRepository, RoleRepository
+│   │   ├── services/            # AuthService (bcrypt + JWT)
+│   │   └── routes.ts
+│   │
+│   ├── promotions/               # ✅ Coupons & Discounts
+│   │   ├── repositories/        # CouponRepository, DiscountRepository
+│   │   ├── services/            # PromotionService (validation logic)
+│   │   └── routes.ts
+│   │
+│   ├── shipping/                 # ✅ Shipping Calculation
+│   │   ├── repositories/        # ShippingZone, ShippingRate
+│   │   ├── services/            # ShippingService (zone-based calculation)
+│   │   └── routes.ts
+│   │
+│   └── taxes/                    # ✅ Tax Calculation
+│       ├── repositories/        # TaxRateRepository
+│       ├── services/            # TaxService (compound tax support)
+│       └── routes.ts
 │
-├── graphql/                   # GraphQL Layer
-│   ├── schema/                # GraphQL schemas
-│   ├── resolvers/             # GraphQL resolvers
-│   └── index.ts               # GraphQL setup
+├── graphql/                      # GraphQL Layer
+│   ├── schema/                  # GraphQL type definitions
+│   ├── resolvers/               # GraphQL resolvers
+│   └── index.ts                 # GraphQL Yoga setup
 │
-├── infrastructure/            # Infrastructure
-│   ├── database/              # PostgreSQL
-│   ├── cache/                 # Redis
-│   └── events/                # NATS
+├── infrastructure/               # Infrastructure
+│   ├── database/                # PostgreSQL client
+│   ├── cache/                   # Redis client
+│   └── events/                  # NATS client
 │
 ├── shared/
-│   ├── interfaces/            # Common interfaces
-│   ├── middleware/            # Auth, validation, errors
-│   └── factories/             # 🏭 Data factories
-│       ├── ProductFactory.ts  # Generate fake products
-│       ├── DataFactory.ts     # Master factory
-│       └── seed.ts            # Database seeder
+│   ├── interfaces/              # IDatabase, IRepository, etc.
+│   ├── middleware/              # ✅ Production-ready middleware
+│   │   ├── authMiddleware.ts   # JWT verification + RBAC
+│   │   ├── validationMiddleware.ts  # Zod validation
+│   │   └── errorMiddleware.ts  # Global error handler
+│   │
+│   ├── validation/              # ✅ Zod Schemas
+│   │   └── schemas.ts          # 15+ validation schemas
+│   │
+│   └── factories/               # 🏭 Data Factories (Faker.js)
+│       ├── ProductFactory.ts
+│       ├── DataFactory.ts
+│       └── seed.ts
 │
-└── main.ts                    # Entry point (Classic DI)
+├── database/
+│   └── migrations/              # SQL Migrations
+│       └── 001_initial_schema.sql  # 20+ tables, indexes, constraints
+│
+└── main.ts                       # Entry point with Classic DI wiring
 ```
 
 ---
@@ -356,16 +472,70 @@ it('should create a product', async () => {
 
 ---
 
-## 🚦 Roadmap
+## 🔄 Inter-Module Integration
 
-- ✅ Products Module (TDD + REST + GraphQL)
-- ✅ Data Factory (Faker.js)
-- ✅ Classic Dependency Injection
-- 🔜 Orders Module (TDD)
-- 🔜 Customers Module (TDD)
-- 🔜 Auth Module (JWT + RBAC)
-- 🔜 Inventory Module
-- 🔜 POS Module
+The **OrderService** demonstrates complete inter-module integration:
+
+```typescript
+// Order creation flow integrates 5 services:
+export class OrderService {
+  constructor(
+    private readonly repository: IOrderRepository,
+    private readonly inventoryService?: InventoryService,    // Stock reservation
+    private readonly taxService?: TaxService,                // Tax calculation
+    private readonly shippingService?: ShippingService,      // Shipping quotes
+    private readonly promotionService?: PromotionService     // Coupon validation
+  ) {}
+
+  async createOrder(dto: CreateOrderDto): Promise<Order> {
+    // 1. Calculate item subtotals
+    // 2. Apply promotions (validate coupon)
+    // 3. Calculate shipping (zone-based rates)
+    // 4. Calculate taxes (compound tax support)
+    // 5. Reserve inventory (atomic stock updates)
+    // 6. Create order in database
+  }
+}
+```
+
+**Order Creation Flow:**
+1. **Items** → Calculate subtotal
+2. **Promotions** → Validate coupon, apply discounts
+3. **Shipping** → Calculate shipping quotes by zone
+4. **Taxes** → Calculate taxes (country/region with compound support)
+5. **Inventory** → Reserve stock atomically
+6. **Order** → Save to database with complete totals
+
+**Order Cancellation Flow:**
+- Automatically releases reserved stock via InventoryService
+
+## ✅ What's Complete
+
+### Core Modules
+- ✅ **Products Module** - Full CRUD with variants, categories, options
+- ✅ **Orders Module** - Complete flow with full integration
+- ✅ **Customers Module** - Profiles, addresses, order history
+- ✅ **Auth Module** - JWT + RBAC + bcrypt
+- ✅ **Inventory Module** - Multi-warehouse with stock movements
+- ✅ **POS Module** - Sessions, sales, cash management
+
+### Supporting Modules
+- ✅ **Promotions** - Coupons + discounts with validation
+- ✅ **Shipping** - Zone-based calculation engine
+- ✅ **Taxes** - Country/region taxes with compound support
+
+### Infrastructure
+- ✅ **Database** - 20+ tables with migrations
+- ✅ **Repositories** - Complete data access layer
+- ✅ **Services** - Business logic with integration
+- ✅ **REST Routes** - 50+ endpoints with validation
+- ✅ **GraphQL API** - Dual API support
+- ✅ **JWT Auth** - Access + refresh tokens
+- ✅ **Zod Validation** - 15+ schemas with error messages
+- ✅ **Data Factory** - Faker.js for seeding
+- ✅ **Docker Compose** - Local development stack
+- ✅ **Health Checks** - Service monitoring
+- ✅ **Error Handling** - Global error handler
 
 ---
 
