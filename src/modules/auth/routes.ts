@@ -3,6 +3,9 @@ import { IDatabase } from '@shared/interfaces/IDatabase.js';
 import { UserRepository } from './repositories/UserRepository.js';
 import { RoleRepository } from './repositories/RoleRepository.js';
 import { AuthService } from './services/AuthService.js';
+import { authMiddleware } from '@shared/middleware/authMiddleware.js';
+import { validate } from '@shared/middleware/validationMiddleware.js';
+import { RegisterSchema, LoginSchema, RefreshTokenSchema } from '@shared/validation/schemas.js';
 
 /**
  * Auth Routes
@@ -21,9 +24,9 @@ export function createAuthRoutes(database: IDatabase) {
    * POST /register
    * Register a new user
    */
-  app.post('/register', async (c) => {
+  app.post('/register', validate(RegisterSchema), async (c) => {
     try {
-      const body = await c.req.json();
+      const body = c.get('validatedData');
       const result = await authService.register(body);
       return c.json(result, 201);
     } catch (error: any) {
@@ -35,9 +38,9 @@ export function createAuthRoutes(database: IDatabase) {
    * POST /login
    * Login a user
    */
-  app.post('/login', async (c) => {
+  app.post('/login', validate(LoginSchema), async (c) => {
     try {
-      const body = await c.req.json();
+      const body = c.get('validatedData');
       const result = await authService.login(body);
       return c.json(result);
     } catch (error: any) {
@@ -49,9 +52,9 @@ export function createAuthRoutes(database: IDatabase) {
    * POST /refresh
    * Refresh access token
    */
-  app.post('/refresh', async (c) => {
+  app.post('/refresh', validate(RefreshTokenSchema), async (c) => {
     try {
-      const body = await c.req.json();
+      const body = c.get('validatedData');
       const tokens = await authService.refreshToken(body.refreshToken);
       return c.json(tokens);
     } catch (error: any) {
@@ -61,15 +64,11 @@ export function createAuthRoutes(database: IDatabase) {
 
   /**
    * GET /me
-   * Get current user (requires auth middleware)
+   * Get current user (requires authentication)
    */
-  app.get('/me', async (c) => {
-    // TODO: Extract userId from JWT token in middleware
-    const userId = c.req.header('x-user-id');
-
-    if (!userId) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+  app.get('/me', authMiddleware, async (c) => {
+    const jwtPayload = c.get('user');
+    const userId = jwtPayload.userId;
 
     try {
       const user = await authService.getUserById(userId);

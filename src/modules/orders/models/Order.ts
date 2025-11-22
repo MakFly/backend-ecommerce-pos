@@ -23,8 +23,10 @@ export interface Order {
   discountTotal: number;
   total: number;
   currency: string;
-  shippingAddress?: Address;
-  billingAddress?: Address;
+  shippingAddress: Address;
+  billingAddress: Address;
+  paymentMethod: string;
+  shippingMethod: string;
   notes?: string;
   metadata?: Record<string, unknown>;
   createdAt: Date;
@@ -53,9 +55,9 @@ export interface Address {
   address1: string;
   address2?: string;
   city: string;
-  province: string;
+  region: string; // State/Province
   country: string;
-  zip: string;
+  postalCode: string;
   phone?: string;
 }
 
@@ -83,11 +85,18 @@ export interface CreateOrderDto {
   email: string;
   items: Array<{
     variantId: string;
+    productId: string;
+    title: string;
+    sku: string;
     quantity: number;
     price: number;
   }>;
-  shippingAddress?: Address;
-  billingAddress?: Address;
+  shippingAddress: Address;
+  billingAddress: Address;
+  paymentMethod: string;
+  shippingMethod: string;
+  currency?: string;
+  couponCode?: string;
   notes?: string;
 }
 

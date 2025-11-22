@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import { IDatabase } from '@shared/interfaces/IDatabase.js';
 import { TaxRateRepository } from './repositories/TaxRateRepository.js';
 import { TaxService } from './services/TaxService.js';
+import { validate } from '@shared/middleware/validationMiddleware.js';
+import { CalculateTaxSchema } from '@shared/validation/schemas.js';
 
 export function createTaxRoutes(database: IDatabase) {
   const app = new Hono();
@@ -9,8 +11,8 @@ export function createTaxRoutes(database: IDatabase) {
   const taxRateRepo = new TaxRateRepository(database);
   const taxService = new TaxService(taxRateRepo);
 
-  app.post('/calculate', async (c) => {
-    const body = await c.req.json();
+  app.post('/calculate', validate(CalculateTaxSchema), async (c) => {
+    const body = c.get('validatedData');
     const calculation = await taxService.calculateTax(body);
     return c.json(calculation);
   });

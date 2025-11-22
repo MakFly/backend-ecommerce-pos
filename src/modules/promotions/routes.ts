@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import { IDatabase } from '@shared/interfaces/IDatabase.js';
 import { CouponRepository, DiscountRepository } from './repositories/PromotionRepository.js';
 import { PromotionService } from './services/PromotionService.js';
+import { validate } from '@shared/middleware/validationMiddleware.js';
+import { ValidateCouponSchema } from '@shared/validation/schemas.js';
 
 export function createPromotionRoutes(database: IDatabase) {
   const app = new Hono();
@@ -10,8 +12,8 @@ export function createPromotionRoutes(database: IDatabase) {
   const discountRepo = new DiscountRepository(database);
   const promotionService = new PromotionService(couponRepo, discountRepo);
 
-  app.post('/validate-coupon', async (c) => {
-    const body = await c.req.json();
+  app.post('/validate-coupon', validate(ValidateCouponSchema), async (c) => {
+    const body = c.get('validatedData');
     const validation = await promotionService.validateCoupon(body);
     return c.json(validation);
   });

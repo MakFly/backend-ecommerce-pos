@@ -4,6 +4,8 @@ import { WarehouseRepository } from './repositories/WarehouseRepository.js';
 import { StockLevelRepository } from './repositories/StockLevelRepository.js';
 import { StockMovementRepository } from './repositories/StockMovementRepository.js';
 import { InventoryService } from './services/InventoryService.js';
+import { validate } from '@shared/middleware/validationMiddleware.js';
+import { ReserveStockSchema, ReleaseStockSchema, AdjustStockSchema } from '@shared/validation/schemas.js';
 
 /**
  * Inventory Routes
@@ -77,8 +79,8 @@ export function createInventoryRoutes(database: IDatabase) {
    * POST /stock-levels/reserve
    * Reserve stock for an order
    */
-  app.post('/stock-levels/reserve', async (c) => {
-    const body = await c.req.json();
+  app.post('/stock-levels/reserve', validate(ReserveStockSchema), async (c) => {
+    const body = c.get('validatedData');
     const stockLevel = await inventoryService.reserveStock(body);
     return c.json({ stockLevel }, 201);
   });
@@ -87,8 +89,8 @@ export function createInventoryRoutes(database: IDatabase) {
    * POST /stock-levels/release
    * Release reserved stock
    */
-  app.post('/stock-levels/release', async (c) => {
-    const body = await c.req.json();
+  app.post('/stock-levels/release', validate(ReleaseStockSchema), async (c) => {
+    const body = c.get('validatedData');
     const stockLevel = await inventoryService.releaseStock(body);
     return c.json({ stockLevel });
   });
@@ -97,8 +99,8 @@ export function createInventoryRoutes(database: IDatabase) {
    * POST /stock-levels/adjust
    * Adjust stock level (inventory count, damaged goods, etc.)
    */
-  app.post('/stock-levels/adjust', async (c) => {
-    const body = await c.req.json();
+  app.post('/stock-levels/adjust', validate(AdjustStockSchema), async (c) => {
+    const body = c.get('validatedData');
     const stockLevel = await inventoryService.adjustStock(body);
     return c.json({ stockLevel });
   });

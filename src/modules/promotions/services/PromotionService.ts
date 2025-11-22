@@ -2,14 +2,28 @@ import {
   ValidateCouponDto,
   CouponValidation,
   Coupon,
+  Discount,
   ApplyDiscountsDto,
   DiscountResult,
 } from '../models/Promotion.js';
+import { ICouponRepository, IDiscountRepository } from '../repositories/IPromotionRepository.js';
 
+/**
+ * Promotion Service
+ *
+ * SOLID Principles:
+ * - Single Responsibility: Promotion and discount logic only
+ * - Dependency Inversion: Depends on repository abstractions
+ */
 export class PromotionService {
+  constructor(
+    private readonly couponRepo: ICouponRepository,
+    private readonly discountRepo: IDiscountRepository
+  ) {}
+
   async validateCoupon(dto: ValidateCouponDto): Promise<CouponValidation> {
-    // Get coupon from DB
-    const coupon = await this.findCouponByCode(dto.code);
+    // 1. Get coupon from DB
+    const coupon = await this.couponRepo.findByCode(dto.code);
 
     if (!coupon) {
       return {
@@ -18,10 +32,19 @@ export class PromotionService {
       };
     }
 
+    // 2. Check if active
     if (!coupon.isActive) {
       return {
         valid: false,
         error: 'Coupon is not active',
+      };
+    }
+
+    // 3. Check expiration
+    if (coupon.startsAt && coupon.startsAt > new Date()) {
+      return {
+        valid: false,
+        error: 'Coupon is not yet valid',
       };
     }
 
@@ -32,6 +55,7 @@ export class PromotionService {
       };
     }
 
+    // 4. Check minimum purchase
     if (coupon.minPurchaseAmount && dto.orderTotal < coupon.minPurchaseAmount) {
       return {
         valid: false,
@@ -39,6 +63,7 @@ export class PromotionService {
       };
     }
 
+    // 5. Check usage limit
     if (coupon.usageLimit && coupon.timesUsed >= coupon.usageLimit) {
       return {
         valid: false,
@@ -46,6 +71,7 @@ export class PromotionService {
       };
     }
 
+    // 6. Calculate discount
     const discountAmount = this.calculateCouponDiscount(coupon, dto.orderTotal);
 
     return {
@@ -59,7 +85,7 @@ export class PromotionService {
     let total = dto.orderTotal;
     const discounts: Array<{ name: string; amount: number; type: string }> = [];
 
-    // Apply coupon if provided
+    // 1. Apply coupon if provided
     if (dto.couponCode) {
       const validation = await this.validateCoupon({
         code: dto.couponCode,
@@ -73,10 +99,33 @@ export class PromotionService {
           type: 'coupon',
         });
         total -= validation.discountAmount;
+
+        // Increment coupon usage
+        if (validation.coupon) {
+          await this.couponRepo.incrementUsage(validation.coupon.id);
+        }
       }
     }
 
-    // Apply automatic discounts (TODO: implement)
+    // 2. Apply automatic discounts
+    const activeDiscounts = await this.discountRepo.findActive();
+
+    for (const discount of activeDiscounts) {
+      if (discount.minPurchaseAmount && total < discount.minPurchaseAmount) {
+        continue;
+      }
+
+      const discountAmount = this.calculateDiscountAmount(discount, total);
+
+      if (discountAmount > 0) {
+        discounts.push({
+          name: discount.title,
+          amount: discountAmount,
+          type: discount.type,
+        });
+        total -= discountAmount;
+      }
+    }
 
     return {
       total,
@@ -84,20 +133,21 @@ export class PromotionService {
     };
   }
 
-  private async findCouponByCode(code: string): Promise<Coupon | null> {
-    // Mock implementation
-    if (code === 'SAVE10') {
-      return {
-        id: 'coupon-1',
-        code: 'SAVE10',
-        type: 'percentage',
-        value: 10,
-        timesUsed: 0,
-        isActive: true,
-        createdAt: new Date(),
-      };
-    }
-    return null;
+  async listCoupons(filters?: { isActive?: boolean; limit?: number }): Promise<Coupon[]> {
+    return this.couponRepo.findAll(filters);
+  }
+
+  async getCoupon(code: string): Promise<Coupon | null> {
+    return this.couponRepo.findByCode(code);
+  }
+
+  async listDiscounts(filters?: { isActive?: boolean; limit?: number }): Promise<Discount[]> {
+    return this.discountRepo.findAll(filters);
+  }
+
+  async createCoupon(coupon: Coupon): Promise<Coupon> {
+    await this.couponRepo.save(coupon);
+    return coupon;
   }
 
   private calculateCouponDiscount(coupon: Coupon, orderTotal: number): number {
@@ -107,12 +157,29 @@ export class PromotionService {
       discount = (orderTotal * coupon.value) / 100;
     } else if (coupon.type === 'fixed') {
       discount = coupon.value;
+    } else if (coupon.type === 'free_shipping') {
+      // Free shipping is handled separately in order flow
+      discount = 0;
     }
 
+    // Apply max discount cap if exists
     if (coupon.maxDiscountAmount && discount > coupon.maxDiscountAmount) {
       discount = coupon.maxDiscountAmount;
     }
 
+    // Can't discount more than order total
     return Math.min(discount, orderTotal);
+  }
+
+  private calculateDiscountAmount(discount: Discount, orderTotal: number): number {
+    let discountAmount = 0;
+
+    if (discount.type === 'percentage') {
+      discountAmount = (orderTotal * discount.value) / 100;
+    } else if (discount.type === 'fixed') {
+      discountAmount = discount.value;
+    }
+
+    return Math.min(discountAmount, orderTotal);
   }
 }

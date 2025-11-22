@@ -3,6 +3,8 @@ import { IDatabase } from '@shared/interfaces/IDatabase.js';
 import { POSSessionRepository } from './repositories/POSSessionRepository.js';
 import { POSSaleRepository } from './repositories/POSSaleRepository.js';
 import { POSService } from './services/POSService.js';
+import { validate } from '@shared/middleware/validationMiddleware.js';
+import { OpenSessionSchema, CloseSessionSchema, CreatePOSSaleSchema } from '@shared/validation/schemas.js';
 
 /**
  * POS Routes
@@ -52,8 +54,8 @@ export function createPOSRoutes(database: IDatabase) {
    * POST /sessions
    * Open a new POS session
    */
-  app.post('/sessions', async (c) => {
-    const body = await c.req.json();
+  app.post('/sessions', validate(OpenSessionSchema), async (c) => {
+    const body = c.get('validatedData');
     const session = await posService.openSession(body);
     return c.json({ session }, 201);
   });
@@ -62,9 +64,9 @@ export function createPOSRoutes(database: IDatabase) {
    * PUT /sessions/:id/close
    * Close a POS session
    */
-  app.put('/sessions/:id/close', async (c) => {
+  app.put('/sessions/:id/close', validate(CloseSessionSchema), async (c) => {
     const { id } = c.req.param();
-    const body = await c.req.json();
+    const body = c.get('validatedData');
     const session = await posService.closeSession(id, body);
     return c.json({ session });
   });
@@ -107,8 +109,8 @@ export function createPOSRoutes(database: IDatabase) {
    * POST /sales
    * Create a new POS sale
    */
-  app.post('/sales', async (c) => {
-    const body = await c.req.json();
+  app.post('/sales', validate(CreatePOSSaleSchema), async (c) => {
+    const body = c.get('validatedData');
     const sale = await posService.createSale(body);
     return c.json({ sale }, 201);
   });
